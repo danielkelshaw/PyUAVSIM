@@ -24,7 +24,11 @@ class UAVDynamics:
             [uav.r0]
         ])
 
-    def update(self, forces_moments):
+        self.v_air = uav.u0
+        self.alpha = 0
+        self.beta = 0
+
+    def update(self, forces_moments, wind):
 
         delta_t = self.ts_sim
         k1 = self._derivatives(self.state, forces_moments)
@@ -44,6 +48,8 @@ class UAVDynamics:
         self.state[7][0] = self.state.item(7) / norm
         self.state[8][0] = self.state.item(8) / norm
         self.state[9][0] = self.state.item(9) / norm
+
+        self._update_velocity(wind)
 
     @staticmethod
     def _derivatives(state, forces_moments):
@@ -117,3 +123,30 @@ class UAVDynamics:
         ])
 
         return x_dot
+
+    def _update_velocity(self, wind):
+
+        steady_state = wind[:3]
+        gust = wind[3:6]
+
+        rot = Quaternion2Rotation(self.state[6:10])
+        wind_bframe = np.matmul(rot.T, steady_state)
+        wind_bframe += gust
+
+        v_air = self.state[3:6] - wind_bframe
+        ur = v_air.item(0)
+        vr = v_air.item(1)
+        wr = v_air.item(2)
+
+        self.v_air = np.sqrt(ur ** 2 + vr ** 2 + wr ** 2)
+
+        if ur == 0:
+            self.alpha = np.sign(wr) * np.pi / 2
+        else:
+            self.alpha = np.arctan(wr / ur)
+
+        tmp = np.sqrt(ur ** 2 + wr ** 2)
+        if tmp == 0:
+            self.beta = np.sign(vr) * np.pi / 2
+        else:
+            self.beta = np.arcsin(vr / tmp)
