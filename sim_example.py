@@ -14,17 +14,14 @@ print('Starting Simulation...')
 n = 0
 while n < (n_steps + 1):
 
-    fx = 10
-    fy = 0
-    fz = 0
-    Mx = 0
-    My = 0
-    Mz = 0
+    delta_e = -0.2
+    delta_a = 0.0
+    delta_r = 0.0
 
-    forces_moments = np.array([[fx, fy, fz, Mx, My, Mz]]).T
+    delta = np.array([[delta_e, delta_a, delta_r]]).T
 
     wind = wind_sim.update()
-    uav_dynamics.update(forces_moments, wind)
+    uav_dynamics.update(delta, wind)
 
     if n % 100 == 0:
         print('t = {:.3f}\t'.format(sim_time)
@@ -33,3 +30,5 @@ while n < (n_steps + 1):
 
     sim_time += sim_timestep
     n += 1
+
+print('Simulation Done...')
