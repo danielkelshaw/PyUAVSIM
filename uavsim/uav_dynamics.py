@@ -24,11 +24,15 @@ class UAVDynamics:
             [uav.r0]
         ])
 
+        self.forces = np.array([[0.0], [0.0], [0.0]])
+
         self.v_air = uav.u0
         self.alpha = 0
         self.beta = 0
 
-    def update(self, forces_moments, wind):
+    def update(self, delta, wind):
+
+        forces_moments = self._forces_moments(delta)
 
         delta_t = self.ts_sim
         k1 = self._derivatives(self.state, forces_moments)
@@ -150,3 +154,83 @@ class UAVDynamics:
             self.beta = np.sign(vr) * np.pi / 2
         else:
             self.beta = np.arcsin(vr / tmp)
+
+    def _forces_moments(self, delta):
+
+        p = self.state.item(10)
+        q = self.state.item(11)
+        r = self.state.item(12)
+
+        delta_e = delta.item(0)
+        delta_a = delta.item(1)
+        delta_r = delta.item(2)
+
+        rot = Quaternion2Rotation(self.state[6:10])
+        g_vector = np.array([[0.0], [0.0], [uav.mass * uav.g0]])
+        f_gravity = np.matmul(rot.T, g_vector)
+
+        fx = f_gravity.item(0)
+        fy = f_gravity.item(1)
+        fz = f_gravity.item(2)
+
+        qbar = 0.5 * uav.rho * self.v_air ** 2
+        c_alpha = np.cos(self.alpha)
+        s_alpha = np.sin(self.alpha)
+
+        p_ndim = p * uav.b / (2 * self.v_air)
+        q_ndim = q * uav.c / (2 * self.v_air)
+        r_ndim = r * uav.b / (2 * self.v_air)
+
+        tmp1 = np.exp(-uav.M * (self.alpha - uav.alpha0))
+        tmp2 = np.exp(uav.M * (self.alpha - uav.alpha0))
+        sigma = (1 + tmp1 + tmp2) / ((1 + tmp1) * (1 + tmp2))
+
+        cl = ((1 - sigma) * (uav.C_L_0 + uav.C_L_alpha * self.alpha)
+              + sigma * 2 * np.sign(self.alpha) * s_alpha ** 2 * c_alpha)
+
+        cd = uav.C_D_p + ((uav.C_L_0 + uav.C_L_alpha * self.alpha) ** 2
+                          / (np.pi * uav.e * uav.AR))
+
+        f_lift = qbar * uav.S_wing * (cl
+                                      + uav.C_L_q * q_ndim
+                                      + uav.C_L_delta_e * delta_e)
+
+        f_drag = qbar * uav.S_wing * (cd
+                                      + uav.C_D_q * q_ndim
+                                      + uav.C_D_delta_e * delta_e)
+
+        fx = fx - c_alpha * f_drag + s_alpha * f_lift
+
+        fz = fz - s_alpha * f_drag - c_alpha * f_lift
+
+        fy = fy + qbar * uav.S_wing * (uav.C_Y_0
+                                       + uav.C_Y_beta * self.beta
+                                       + uav.C_Y_p * p_ndim
+                                       + uav.C_Y_r * r_ndim
+                                       + uav.C_Y_delta_a * delta_a
+                                       + uav.C_Y_delta_r * delta_r)
+
+        My = qbar * uav.S_wing * uav.c * (uav.C_m_0
+                                          + uav.C_m_alpha * self.alpha
+                                          + uav.C_m_q * q_ndim
+                                          + uav.C_m_delta_e * delta_e)
+
+        Mx = qbar * uav.S_wing * uav.b * (uav.C_ell_0
+                                          + uav.C_ell_beta * self.beta
+                                          + uav.C_ell_p * p_ndim
+                                          + uav.C_ell_r * r_ndim
+                                          + uav.C_ell_delta_a * delta_a
+                                          + uav.C_ell_delta_r * delta_r)
+
+        Mz = qbar * uav.S_wing * uav.b * (uav.C_n_0
+                                          + uav.C_n_beta * self.beta
+                                          + uav.C_n_p * p_ndim
+                                          + uav.C_n_r * r_ndim
+                                          + uav.C_n_delta_a * delta_a
+                                          + uav.C_n_delta_r * delta_r)
+
+        self.forces[0] = fx
+        self.forces[1] = fy
+        self.forces[2] = fz
+
+        return np.array([[fx, fy, fz, Mx, My, Mz]]).T
