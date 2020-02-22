@@ -164,6 +164,7 @@ class UAVDynamics:
         delta_e = delta.item(0)
         delta_a = delta.item(1)
         delta_r = delta.item(2)
+        delta_t = delta.item(3)
 
         rot = Quaternion2Rotation(self.state[6:10])
         g_vector = np.array([[0.0], [0.0], [uav.mass * uav.g0]])
@@ -229,8 +230,33 @@ class UAVDynamics:
                                           + uav.C_n_delta_a * delta_a
                                           + uav.C_n_delta_r * delta_r)
 
+        p_thrust, p_torque = self._motor_thrust_torque(self.v_air, delta_t)
+        fx += p_thrust
+        Mx -= p_torque
+
         self.forces[0] = fx
         self.forces[1] = fy
         self.forces[2] = fz
 
         return np.array([[fx, fy, fz, Mx, My, Mz]]).T
+
+    def _motor_thrust_torque(self, va, delta_t):
+
+        v_in = uav.V_max * delta_t
+
+        a = uav.C_Q0 * uav.rho * np.power(uav.D_prop, 5) / ((2. * np.pi) ** 2)
+        b = ((uav.C_Q1 * uav.rho * np.power(uav.D_prop, 4)
+              / (2. * np.pi)) * va + uav.KQ ** 2 / uav.R_motor)
+        c = (uav.C_Q2 * uav.rho * np.power(uav.D_prop, 3) * va ** 2
+             - (uav.KQ / uav.R_motor) * v_in + uav.KQ * uav.i0)
+
+        omega = (-b + np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
+        J = 2 * np.pi * self.v_air / (omega * uav.D_prop)
+
+        C_T = uav.C_T2 * J ** 2 + uav.C_T1 * J + uav.C_T0
+        C_Q = uav.C_Q2 * J ** 2 + uav.C_Q1 * J + uav.C_Q0
+
+        n = omega / (2 * np.pi)
+        thrust = uav.rho * n ** 2 * np.power(uav.D_prop, 4) * C_T
+        torque = uav.rho * n ** 2 * np.power(uav.D_prop, 5) * C_Q
+        return thrust, torque
