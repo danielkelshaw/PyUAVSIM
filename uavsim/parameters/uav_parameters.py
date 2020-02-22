@@ -74,6 +74,24 @@ C_Y_delta_r = 0.19
 C_ell_delta_r = 0.0024
 C_n_delta_r = -0.069
 
+# propeller thrust parameters
+D_prop = 20*(0.0254)
+
+K_V = 145.0
+KQ = (1.0 / K_V) * 60.0 / (2.0 * np.pi)
+R_motor = 0.042
+i0 = 1.5
+
+ncells = 12.0
+V_max = 3.7 * ncells
+
+C_Q2 = -0.01664
+C_Q1 = 0.004970
+C_Q0 = 0.005230
+C_T2 = -0.1079
+C_T1 = -0.06044
+C_T0 = 0.09357
+
 # Calculation Variables
 gamma = Jx * Jz - (Jxz ** 2)
 gamma1 = (Jxz * (Jx - Jy + Jz)) / gamma

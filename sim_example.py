@@ -17,8 +17,9 @@ while n < (n_steps + 1):
     delta_e = -0.2
     delta_a = 0.0
     delta_r = 0.0
+    delta_t = 0.0
 
-    delta = np.array([[delta_e, delta_a, delta_r]]).T
+    delta = np.array([[delta_e, delta_a, delta_r, delta_t]]).T
 
     wind = wind_sim.update()
     uav_dynamics.update(delta, wind)
