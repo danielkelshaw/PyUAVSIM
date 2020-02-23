@@ -55,3 +55,29 @@ def Quaternion2Rotation(quaternion):
     R = R / linalg.det(R)
 
     return R
+
+
+def Euler2Rotation(phi, theta, psi):
+
+    c_phi = np.cos(phi)
+    s_phi = np.sin(phi)
+    c_theta = np.cos(theta)
+    s_theta = np.sin(theta)
+    c_psi = np.cos(psi)
+    s_psi = np.sin(psi)
+
+    R_roll = np.array([[1, 0, 0],
+                       [0, c_phi, -s_phi],
+                       [0, s_phi, c_phi]])
+
+    R_pitch = np.array([[c_theta, 0, s_theta],
+                        [0, 1, 0],
+                        [-s_theta, 0, c_theta]])
+
+    R_yaw = np.array([[c_psi, -s_psi, 0],
+                      [s_psi, c_psi, 0],
+                      [0, 0, 1]])
+
+    R = np.matmul(R_yaw, np.matmul(R_pitch, R_roll))
+
+    return R
