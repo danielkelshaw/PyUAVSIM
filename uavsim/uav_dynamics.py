@@ -1,6 +1,7 @@
 import numpy as np
 from .parameters import uav_parameters as uav
-from .utility.rotations import Quaternion2Rotation
+from .messages import MsgState
+from .utility.rotations import Quaternion2Rotation, Quaternion2Euler
 
 
 class UAVDynamics:
@@ -24,11 +25,16 @@ class UAVDynamics:
             [uav.r0]
         ])
 
+        self.wind = np.array([[0.0], [0.0], [0.0]])
+        self._update_velocity()
+
         self.forces = np.array([[0.0], [0.0], [0.0]])
 
         self.v_air = uav.u0
         self.alpha = 0
         self.beta = 0
+
+        self.true_state = MsgState()
 
     def update(self, delta, wind):
 
@@ -54,6 +60,7 @@ class UAVDynamics:
         self.state[9][0] = self.state.item(9) / norm
 
         self._update_velocity(wind)
+        self._update_true_state()
 
     @staticmethod
     def _derivatives(state, forces_moments):
@@ -128,9 +135,9 @@ class UAVDynamics:
 
         return x_dot
 
-    def _update_velocity(self, wind):
+    def _update_velocity(self, wind=np.zeros((6, 1))):
 
-        steady_state = wind[:3]
+        steady_state = wind[0:3]
         gust = wind[3:6]
 
         rot = Quaternion2Rotation(self.state[6:10])
@@ -183,7 +190,7 @@ class UAVDynamics:
         r_ndim = r * uav.b / (2 * self.v_air)
 
         tmp1 = np.exp(-uav.M * (self.alpha - uav.alpha0))
-        tmp2 = np.exp(uav.M * (self.alpha - uav.alpha0))
+        tmp2 = np.exp(uav.M * (self.alpha + uav.alpha0))
         sigma = (1 + tmp1 + tmp2) / ((1 + tmp1) * (1 + tmp2))
 
         cl = ((1 - sigma) * (uav.C_L_0 + uav.C_L_alpha * self.alpha)
@@ -201,7 +208,6 @@ class UAVDynamics:
                                       + uav.C_D_delta_e * delta_e)
 
         fx = fx - c_alpha * f_drag + s_alpha * f_lift
-
         fz = fz - s_alpha * f_drag - c_alpha * f_lift
 
         fy = fy + qbar * uav.S_wing * (uav.C_Y_0
@@ -232,7 +238,7 @@ class UAVDynamics:
 
         p_thrust, p_torque = self._motor_thrust_torque(self.v_air, delta_t)
         fx += p_thrust
-        Mx -= p_torque
+        Mx += -p_torque
 
         self.forces[0] = fx
         self.forces[1] = fy
@@ -260,3 +266,32 @@ class UAVDynamics:
         thrust = uav.rho * n ** 2 * np.power(uav.D_prop, 4) * C_T
         torque = uav.rho * n ** 2 * np.power(uav.D_prop, 5) * C_Q
         return thrust, torque
+
+    def _update_true_state(self):
+
+        phi, theta, psi = Quaternion2Euler(self.state[6:10])
+        pdot = np.matmul(Quaternion2Rotation(self.state[6:10]), self.state[3:6])
+
+        self.true_state.px = self.state.item(0)
+        self.true_state.py = self.state.item(1)
+        self.true_state.h = -self.state.item(2)
+
+        self.true_state.phi = phi
+        self.true_state.theta = theta
+        self.true_state.psi = psi
+
+        self.true_state.v_air = self.v_air
+        self.true_state.alpha = self.alpha
+        self.true_state.beta = self.beta
+
+        self.true_state.p = self.state.item(10)
+        self.true_state.q = self.state.item(11)
+        self.true_state.r = self.state.item(12)
+
+        self.true_state.v_ground = np.linalg.norm(pdot)
+        self.true_state.gamma = np.arcsin(pdot.item(2)
+                                          / self.true_state.v_ground)
+        self.true_state.chi = np.arctan2(pdot.item(1), pdot.item(0))
+
+        self.true_state.wx = self.wind.item(0)
+        self.true_state.wy = self.wind.item(1)
