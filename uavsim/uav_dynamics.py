@@ -1,28 +1,32 @@
 import numpy as np
-from .parameters import uav_parameters as uav
 from .messages import MsgState
+from .parameters.uav_parameters import UAVParams
 from .utility.rotations import Quaternion2Rotation, Quaternion2Euler
 
 
 class UAVDynamics:
 
-    def __init__(self, ts):
+    def __init__(self, uav_params, ts):
 
+        assert isinstance(uav_params, UAVParams)
+
+        self.uav = uav_params
         self.ts_sim = ts
+
         self.state = np.array([
-            [uav.px0],
-            [uav.py0],
-            [uav.pz0],
-            [uav.u0],
-            [uav.v0],
-            [uav.w0],
-            [uav.e0],
-            [uav.e1],
-            [uav.e2],
-            [uav.e3],
-            [uav.p0],
-            [uav.q0],
-            [uav.r0]
+            [self.uav.px0],
+            [self.uav.py0],
+            [self.uav.pz0],
+            [self.uav.u0],
+            [self.uav.v0],
+            [self.uav.w0],
+            [self.uav.e0],
+            [self.uav.e1],
+            [self.uav.e2],
+            [self.uav.e3],
+            [self.uav.p0],
+            [self.uav.q0],
+            [self.uav.r0]
         ])
 
         self.wind = np.array([[0.0], [0.0], [0.0]])
@@ -30,7 +34,7 @@ class UAVDynamics:
 
         self.forces = np.array([[0.0], [0.0], [0.0]])
 
-        self.v_air = uav.u0
+        self.v_air = self.uav.u0
         self.alpha = 0
         self.beta = 0
 
@@ -62,8 +66,7 @@ class UAVDynamics:
         self._update_velocity(wind)
         self._update_true_state()
 
-    @staticmethod
-    def _derivatives(state, forces_moments):
+    def _derivatives(self, state, forces_moments):
 
         # extract states
         u = state.item(3)
@@ -91,9 +94,9 @@ class UAVDynamics:
         pz_dot = p_dot.item(2)
 
         # position dynamics
-        u_dot = r * v - q * w + fx / uav.mass
-        v_dot = p * w - r * u + fy / uav.mass
-        w_dot = q * u - p * v + fz / uav.mass
+        u_dot = r * v - q * w + fx / self.uav.mass
+        v_dot = p * w - r * u + fy / self.uav.mass
+        w_dot = q * u - p * v + fz / self.uav.mass
 
         # rotational kinematics
         e0_dot = 0.5 * (-p * e1 - q * e2 - r * e3)
@@ -102,19 +105,19 @@ class UAVDynamics:
         e3_dot = 0.5 * (r * e0 + q * e1 - p * e2)
 
         # rotatonal dynamics
-        p_dot = (uav.gamma1 * p * q
-                 - uav.gamma2 * q * r
-                 + uav.gamma3 * l
-                 + uav.gamma4 * n)
+        p_dot = (self.uav.gamma1 * p * q
+                 - self.uav.gamma2 * q * r
+                 + self.uav.gamma3 * l
+                 + self.uav.gamma4 * n)
 
-        q_dot = (uav.gamma5 * p * r
-                 - uav.gamma6 * (p ** 2 - r ** 2)
-                 + m / uav.Jy)
+        q_dot = (self.uav.gamma5 * p * r
+                 - self.uav.gamma6 * (p ** 2 - r ** 2)
+                 + m / self.uav.Jy)
 
-        r_dot = (uav.gamma7 * p * q
-                 - uav.gamma1 * q * r
-                 + uav.gamma4 * l
-                 + uav.gamma8 * n)
+        r_dot = (self.uav.gamma7 * p * q
+                 - self.uav.gamma1 * q * r
+                 + self.uav.gamma4 * l
+                 + self.uav.gamma8 * n)
 
         # state derivative vector
         x_dot = np.array([
@@ -174,67 +177,80 @@ class UAVDynamics:
         delta_t = delta.item(3)
 
         rot = Quaternion2Rotation(self.state[6:10])
-        g_vector = np.array([[0.0], [0.0], [uav.mass * uav.g0]])
+        g_vector = np.array([[0.0], [0.0], [self.uav.mass * self.uav.g0]])
         f_gravity = np.matmul(rot.T, g_vector)
 
         fx = f_gravity.item(0)
         fy = f_gravity.item(1)
         fz = f_gravity.item(2)
 
-        qbar = 0.5 * uav.rho * self.v_air ** 2
+        qbar = 0.5 * self.uav.rho * self.v_air ** 2
         c_alpha = np.cos(self.alpha)
         s_alpha = np.sin(self.alpha)
 
-        p_ndim = p * uav.b / (2 * self.v_air)
-        q_ndim = q * uav.c / (2 * self.v_air)
-        r_ndim = r * uav.b / (2 * self.v_air)
+        p_ndim = p * self.uav.b / (2 * self.v_air)
+        q_ndim = q * self.uav.c / (2 * self.v_air)
+        r_ndim = r * self.uav.b / (2 * self.v_air)
 
-        tmp1 = np.exp(-uav.M * (self.alpha - uav.alpha0))
-        tmp2 = np.exp(uav.M * (self.alpha + uav.alpha0))
+        tmp1 = np.exp(-self.uav.M * (self.alpha - self.uav.alpha0))
+        tmp2 = np.exp(self.uav.M * (self.alpha + self.uav.alpha0))
         sigma = (1 + tmp1 + tmp2) / ((1 + tmp1) * (1 + tmp2))
 
-        cl = ((1 - sigma) * (uav.C_L_0 + uav.C_L_alpha * self.alpha)
+        cl = ((1 - sigma) * (self.uav.C_L_0 + self.uav.C_L_alpha * self.alpha)
               + sigma * 2 * np.sign(self.alpha) * s_alpha ** 2 * c_alpha)
 
-        cd = uav.C_D_p + ((uav.C_L_0 + uav.C_L_alpha * self.alpha) ** 2
-                          / (np.pi * uav.e * uav.AR))
+        cd = (self.uav.C_D_p
+              + ((self.uav.C_L_0 + self.uav.C_L_alpha * self.alpha) ** 2
+                 / (np.pi * self.uav.e * self.uav.AR)))
 
-        f_lift = qbar * uav.S_wing * (cl
-                                      + uav.C_L_q * q_ndim
-                                      + uav.C_L_delta_e * delta_e)
+        f_lift = qbar * self.uav.S_wing * (
+                cl
+                + self.uav.C_L_q * q_ndim
+                + self.uav.C_L_delta_e * delta_e
+        )
 
-        f_drag = qbar * uav.S_wing * (cd
-                                      + uav.C_D_q * q_ndim
-                                      + uav.C_D_delta_e * delta_e)
+        f_drag = qbar * self.uav.S_wing * (
+                cd
+                + self.uav.C_D_q * q_ndim
+                + self.uav.C_D_delta_e * delta_e
+        )
 
         fx = fx - c_alpha * f_drag + s_alpha * f_lift
         fz = fz - s_alpha * f_drag - c_alpha * f_lift
 
-        fy = fy + qbar * uav.S_wing * (uav.C_Y_0
-                                       + uav.C_Y_beta * self.beta
-                                       + uav.C_Y_p * p_ndim
-                                       + uav.C_Y_r * r_ndim
-                                       + uav.C_Y_delta_a * delta_a
-                                       + uav.C_Y_delta_r * delta_r)
+        fy = fy + qbar * self.uav.S_wing * (
+                self.uav.C_Y_0
+                + self.uav.C_Y_beta * self.beta
+                + self.uav.C_Y_p * p_ndim
+                + self.uav.C_Y_r * r_ndim
+                + self.uav.C_Y_delta_a * delta_a
+                + self.uav.C_Y_delta_r * delta_r
+        )
 
-        My = qbar * uav.S_wing * uav.c * (uav.C_m_0
-                                          + uav.C_m_alpha * self.alpha
-                                          + uav.C_m_q * q_ndim
-                                          + uav.C_m_delta_e * delta_e)
+        My = qbar * self.uav.S_wing * self.uav.c * (
+                self.uav.C_m_0
+                + self.uav.C_m_alpha * self.alpha
+                + self.uav.C_m_q * q_ndim
+                + self.uav.C_m_delta_e * delta_e
+        )
 
-        Mx = qbar * uav.S_wing * uav.b * (uav.C_ell_0
-                                          + uav.C_ell_beta * self.beta
-                                          + uav.C_ell_p * p_ndim
-                                          + uav.C_ell_r * r_ndim
-                                          + uav.C_ell_delta_a * delta_a
-                                          + uav.C_ell_delta_r * delta_r)
+        Mx = qbar * self.uav.S_wing * self.uav.b * (
+                self.uav.C_ell_0
+                + self.uav.C_ell_beta * self.beta
+                + self.uav.C_ell_p * p_ndim
+                + self.uav.C_ell_r * r_ndim
+                + self.uav.C_ell_delta_a * delta_a
+                + self.uav.C_ell_delta_r * delta_r
+        )
 
-        Mz = qbar * uav.S_wing * uav.b * (uav.C_n_0
-                                          + uav.C_n_beta * self.beta
-                                          + uav.C_n_p * p_ndim
-                                          + uav.C_n_r * r_ndim
-                                          + uav.C_n_delta_a * delta_a
-                                          + uav.C_n_delta_r * delta_r)
+        Mz = qbar * self.uav.S_wing * self.uav.b * (
+                self.uav.C_n_0
+                + self.uav.C_n_beta * self.beta
+                + self.uav.C_n_p * p_ndim
+                + self.uav.C_n_r * r_ndim
+                + self.uav.C_n_delta_a * delta_a
+                + self.uav.C_n_delta_r * delta_r
+        )
 
         p_thrust, p_torque = self._motor_thrust_torque(self.v_air, delta_t)
         fx += p_thrust
@@ -248,23 +264,29 @@ class UAVDynamics:
 
     def _motor_thrust_torque(self, va, delta_t):
 
-        v_in = uav.V_max * delta_t
+        v_in = self.uav.V_max * delta_t
 
-        a = uav.C_Q0 * uav.rho * np.power(uav.D_prop, 5) / ((2. * np.pi) ** 2)
-        b = ((uav.C_Q1 * uav.rho * np.power(uav.D_prop, 4)
-              / (2. * np.pi)) * va + uav.KQ ** 2 / uav.R_motor)
-        c = (uav.C_Q2 * uav.rho * np.power(uav.D_prop, 3) * va ** 2
-             - (uav.KQ / uav.R_motor) * v_in + uav.KQ * uav.i0)
+        a = (self.uav.C_Q0 * self.uav.rho
+             * np.power(self.uav.D_prop, 5) / ((2. * np.pi) ** 2))
+
+        b = ((self.uav.C_Q1 * self.uav.rho
+              * np.power(self.uav.D_prop, 4) / (2. * np.pi)) * va
+             + self.uav.KQ ** 2 / self.uav.R_motor)
+
+        c = (self.uav.C_Q2 * self.uav.rho
+             * np.power(self.uav.D_prop, 3) * va ** 2
+             - (self.uav.KQ / self.uav.R_motor) * v_in
+             + self.uav.KQ * self.uav.i0)
 
         omega = (-b + np.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
-        J = 2 * np.pi * self.v_air / (omega * uav.D_prop)
+        J = 2 * np.pi * self.v_air / (omega * self.uav.D_prop)
 
-        C_T = uav.C_T2 * J ** 2 + uav.C_T1 * J + uav.C_T0
-        C_Q = uav.C_Q2 * J ** 2 + uav.C_Q1 * J + uav.C_Q0
+        C_T = self.uav.C_T2 * J ** 2 + self.uav.C_T1 * J + self.uav.C_T0
+        C_Q = self.uav.C_Q2 * J ** 2 + self.uav.C_Q1 * J + self.uav.C_Q0
 
         n = omega / (2 * np.pi)
-        thrust = uav.rho * n ** 2 * np.power(uav.D_prop, 4) * C_T
-        torque = uav.rho * n ** 2 * np.power(uav.D_prop, 5) * C_Q
+        thrust = self.uav.rho * n ** 2 * np.power(self.uav.D_prop, 4) * C_T
+        torque = self.uav.rho * n ** 2 * np.power(self.uav.D_prop, 5) * C_Q
         return thrust, torque
 
     def _update_true_state(self):

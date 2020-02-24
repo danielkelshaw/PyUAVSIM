@@ -14,7 +14,9 @@ class UAVViewer:
         self.window.setGeometry(0, 0, 1000, 1000)
 
         grid = gl.GLGridItem()
-        grid.scale(20, 20, 20)
+        # grid.scale(20, 20, 20)
+        grid.setSize(2000, 2000, 2000)
+        grid.setSpacing(20, 20, 20)
         self.window.addItem(grid)
         self.window.setCameraPosition(distance=200)
         self.window.setBackgroundColor('k')
