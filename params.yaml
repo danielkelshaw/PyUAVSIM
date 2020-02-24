@@ -27,7 +27,6 @@ physical_params:
   b: 2.8956
   c: 0.18994
   e: 0.9
-  AR: (b ** 2) / S_wing
 
   S_prop: 0.2027
 
@@ -85,12 +84,10 @@ prop_params:
   D_prop: 0.508
 
   K_V: 145.0
-  KQ: (1.0 / K_V) * 60.0 / (2.0 * np.pi)
   R_motor: 0.042
   i0: 1.5
 
   ncells: 12.0
-  V_max: 3.7 * ncells
 
   C_Q2: -0.01664
   C_Q1: 0.004970
