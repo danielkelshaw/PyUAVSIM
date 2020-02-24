@@ -3,7 +3,10 @@ import numpy as np
 
 
 sim_timestep = 0.01
-uav_dynamics = uavsim.UAVDynamics(sim_timestep)
+
+uav = uavsim.UAVParams('params.yaml')
+
+uav_dynamics = uavsim.UAVDynamics(uav, sim_timestep)
 wind_sim = uavsim.WindSimulator(sim_timestep)
 
 uav_viewer = uavsim.UAVViewer()
