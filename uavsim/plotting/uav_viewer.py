@@ -11,7 +11,7 @@ class UAVViewer:
         self.app = pg.QtGui.QApplication([])
         self.window = gl.GLViewWidget()
         self.window.setWindowTitle('UAV Viewer')
-        self.window.setGeometry(0, 0, 1000, 1000)
+        self.window.setGeometry(0, 0, 1000, 500)
 
         grid = gl.GLGridItem()
         # grid.scale(20, 20, 20)
