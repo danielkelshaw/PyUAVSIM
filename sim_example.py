@@ -1,6 +1,7 @@
 import uavsim
 import numpy as np
 from uavsim.utility.trim import compute_trim
+from uavsim.utility.signals import Signal
 
 
 sim_timestep = 0.01
@@ -13,6 +14,9 @@ wind_sim = uavsim.WindSimulator(sim_timestep)
 trim_state, trim_delta = compute_trim(uav_dynamics, 25, 0)
 uav_dynamics.state = trim_state
 delta = trim_delta
+saved_trim = delta.copy()
+
+elevator_command = Signal(amplitude=0.1, start_time=3.0, frequeny=0.01, duration=0.5)
 
 uav_viewer = uavsim.UAVViewer()
 
@@ -24,12 +28,11 @@ print('Starting Simulation...')
 n = 0
 while n < (n_steps + 1):
 
-    # delta_e = -0.2
-    # delta_a = 0.0
-    # delta_r = 0.005
-    # delta_t = 0.5
-    #
-    # delta = np.array([[delta_e, delta_a, delta_r, delta_t]]).T
+    # demonstrating phugoid
+    if not elevator_command.impulse(sim_time) == 0:
+        delta[0] = elevator_command.impulse(sim_time)
+    else:
+        delta[0] = saved_trim[0]
 
     wind = wind_sim.update()
     uav_dynamics.update(delta, wind)
