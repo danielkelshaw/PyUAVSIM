@@ -4,14 +4,16 @@ import numpy as np
 class Signal:
 
     def __init__(self,
+                 offset=0.0,
                  amplitude=1.0,
-                 frequeny=1.0,
+                 frequency=1.0,
                  start_time=1.0,
                  duration=0.01):
 
+        self.offset = offset
         self.amplitude = amplitude
-        self.frequency = frequeny
-        self.period = 1 / frequeny
+        self.frequency = frequency
+        self.period = 1 / frequency
         self.start_time = start_time
         self.duration = duration
 
@@ -23,7 +25,7 @@ class Signal:
             y = self.amplitude
         else:
             y = 0.0
-        return y
+        return y + self.offset
 
     def sinusoid(self, time):
 
@@ -31,7 +33,7 @@ class Signal:
             y = self.amplitude * np.sin(self.frequency * time)
         else:
             y = 0.0
-        return y
+        return y + self.offset
 
     def square(self, time):
 
@@ -43,7 +45,7 @@ class Signal:
             y = -self.amplitude
         if time >= self.last_time + self.period:
             self.last_time = time
-        return y
+        return y + self.offset
 
     def impulse(self, time):
 
@@ -52,4 +54,4 @@ class Signal:
             y = self.amplitude
         else:
             y = 0.0
-        return y
+        return y + self.offset

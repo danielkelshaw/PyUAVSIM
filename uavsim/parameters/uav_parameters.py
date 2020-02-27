@@ -136,3 +136,22 @@ class UAVParams:
         self.gamma7 = ((self.Jx - self.Jy) * self.Jx
                        + (self.Jxz ** 2)) / self.gamma
         self.gamma8 = self.Jx / self.gamma
+
+        self.C_p_0 = self.gamma3 * self.C_ell_0 + self.gamma4 * self.C_n_0
+        self.C_p_beta = (self.gamma3 * self.C_ell_beta
+                         + self.gamma4 * self.C_n_beta)
+        self.C_p_p = self.gamma3 * self.C_ell_p + self.gamma4 * self.C_n_p
+        self.C_p_r = self.gamma3 * self.C_ell_r + self.gamma4 * self.C_n_r
+        self.C_p_delta_a = (self.gamma3 * self.C_ell_delta_a
+                            + self.gamma4 * self.C_n_delta_a)
+        self.C_p_delta_r = (self.gamma3 * self.C_ell_delta_r
+                            + self.gamma4 * self.C_n_delta_r)
+        self.C_r_0 = self.gamma4 * self.C_ell_0 + self.gamma8 * self.C_n_0
+        self.C_r_beta = (self.gamma4 * self.C_ell_beta
+                         + self.gamma8 * self.C_n_beta)
+        self.C_r_p = self.gamma4 * self.C_ell_p + self.gamma8 * self.C_n_p
+        self.C_r_r = self.gamma4 * self.C_ell_r + self.gamma8 * self.C_n_r
+        self.C_r_delta_a = (self.gamma4 * self.C_ell_delta_a
+                            + self.gamma8 * self.C_n_delta_a)
+        self.C_r_delta_r = (self.gamma4 * self.C_ell_delta_r
+                            + self.gamma8 * self.C_n_delta_r)
