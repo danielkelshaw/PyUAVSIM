@@ -1,7 +1,9 @@
 import numpy as np
-from .messages import MsgState
+from .messages import MsgState, MsgSensors
 from .parameters.uav_parameters import UAVParams
+from .parameters.sensor_parameters import SensorParams
 from .utility.rotations import Quaternion2Rotation, Quaternion2Euler
+from .utility.rotations import Euler2Rotation
 
 
 class UAVDynamics:
@@ -40,6 +42,13 @@ class UAVDynamics:
 
         self.true_state = MsgState()
 
+        self._sp = SensorParams()
+        self.sensors = MsgSensors()
+        self.t_gps = 1e6
+        self.gps_eta_x = 0.0
+        self.gps_eta_y = 0.0
+        self.gps_eta_z = 0.0
+
     def update(self, delta, wind):
 
         forces_moments = self._forces_moments(delta)
@@ -65,6 +74,91 @@ class UAVDynamics:
 
         self._update_velocity(wind)
         self._update_true_state()
+
+    def get_sensors(self):
+
+        phi, theta, psi = Quaternion2Euler(self.state[6:10])
+        pdot = np.matmul(Quaternion2Rotation(self.state[6:10]), self.state[3:6])
+
+        # simulate gyroscopes
+        self.sensors.gyro_x = (self.state.item(10)
+                               + np.random.normal(self._sp.gyro_bias_x,
+                                                  self._sp.gyro_sigma))
+
+        self.sensors.gyro_y = (self.state.item(11)
+                               + np.random.normal(self._sp.gyro_bias_y,
+                                                  self._sp.gyro_sigma))
+
+        self.sensors.gyro_z = (self.state.item(12)
+                               + np.random.normal(self._sp.gyro_bias_z,
+                                                  self._sp.gyro_sigma))
+
+        # simulate accelerometers
+        self.sensors.accel_x = (self.forces.item(0) / self.uav.mass
+                                + self.uav.g0 * np.sin(theta)
+                                + np.random.normal(0, self._sp.accel_sigma))
+
+        self.sensors.accel_y = (self.forces.item(1) / self.uav.mass
+                                + self.uav.g0 * np.cos(theta) * np.sin(phi)
+                                + np.random.normal(0, self._sp.accel_sigma))
+
+        self.sensors.accel_z = (self.forces.item(2) / self.uav.mass
+                                + self.uav.g0 * np.cos(theta) * np.cos(phi)
+                                + np.random.normal(0, self._sp.accel_sigma))
+
+        # simulate magnetometers
+        rot_mag = Euler2Rotation(0.0, np.radians(-66), np.radians(12.5))
+        mag_inertial = np.matmul(rot_mag.T, np.array([[1.0], [0.0], [0.0]]))
+        rot = Quaternion2Rotation(self.state[6:10])
+        mag_body = np.matmul(rot.T, mag_inertial)
+
+        self.sensors.mag_x = (mag_body.item(0)
+                              + np.random.normal(0, self._sp.mag_sigma))
+
+        self.sensors.mag_y = (mag_body.item(1)
+                              + np.random.normal(0, self._sp.mag_sigma))
+
+        self.sensors.mag_z = (mag_body.item(2)
+                              + np.random.normal(0, self._sp.mag_sigma))
+
+        # simulate pressure sensors
+        self.sensors.p_static = (-self.uav.rho * self.uav.g0
+                                 * self.state.item(2)
+                                 + np.random.normal(0, self._sp.p_static_sigma))
+
+        self.sensors.p_diff = (0.5 * self.uav.rho * self.v_air ** 2
+                               + np.random.normal(0, self._sp.p_diff_sigma))
+
+        # simulate gps sensor
+        if self.t_gps > self._sp.ts_gps:
+            self.gps_eta_x = (np.exp(-self._sp.gps_beta * self._sp.ts_gps)
+                              * self.gps_eta_x
+                              + np.random.normal(0, self._sp.gps_sigma_x))
+
+            self.gps_eta_y = (np.exp(-self._sp.gps_beta * self._sp.ts_gps)
+                              * self.gps_eta_y
+                              + np.random.normal(0, self._sp.gps_sigma_y))
+
+            self.gps_eta_z = (np.exp(-self._sp.gps_beta * self._sp.ts_gps)
+                              * self.gps_eta_z
+                              + np.random.normal(0, self._sp.gps_sigma_z))
+
+            self.sensors.gps_x = self.state.item(0) + self.gps_eta_x
+            self.sensors.gps_y = self.state.item(1) + self.gps_eta_y
+            self.sensors.gps_z = self.state.item(2) + self.gps_eta_z
+            self.sensors.gps_v = np.linalg.norm(
+                self.state[3:6] + np.random.normal(0, self._sp.gps_sigma_v)
+            )
+
+            self.sensors.gps_course = np.arctan2(pdot.item(1), pdot.item(2))
+            self.sensors.gps_course += np.random.normal(
+                0, self._sp.gps_sigma_course
+            )
+
+            self.t_gps = 0.0
+        else:
+            self.t_gps += self.ts_sim
+        return self.sensors
 
     def _derivatives(self, state, forces_moments):
 

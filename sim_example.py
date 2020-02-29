@@ -42,6 +42,7 @@ while n < (n_steps + 1):
     commands.course_command = chi_command.square(sim_time)
     commands.altitude_command = h_command.square(sim_time)
 
+    measurements = uav_dynamics.get_sensors()
     estimated_state = uav_dynamics.true_state
     delta, commanded_state = autopilot.update(commands, estimated_state)
 
