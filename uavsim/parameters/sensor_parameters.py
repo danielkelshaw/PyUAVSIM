@@ -10,7 +10,7 @@ class SensorParams:
         self.gyro_bias_x = 0.0
         self.gyro_bias_y = 0.0
         self.gyro_bias_z = 0.0
-        self.gyro_sigma = np.radians(0.15)
+        self.gyro_sigma = np.radians(0.1)
 
         self.p_static_sigma = 10
         self.p_diff_sigma = 2

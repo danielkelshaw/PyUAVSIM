@@ -5,6 +5,8 @@ from .wind_simulation import WindSimulator
 from .pid_control import *
 from .plotting import *
 from .autopilot import Autopilot
+from .observer import Observer
 
 __all__ = ['parameters', 'utility', 'uav_dynamics',
-           'wind_simulation', 'plotting', 'pid_control', 'autopilot']
+           'wind_simulation', 'plotting', 'pid_control',
+           'autopilot', 'observer']
