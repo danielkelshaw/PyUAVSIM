@@ -99,11 +99,11 @@ class UAVDynamics:
                                 + np.random.normal(0, self._sp.accel_sigma))
 
         self.sensors.accel_y = (self.forces.item(1) / self.uav.mass
-                                + self.uav.g0 * np.cos(theta) * np.sin(phi)
+                                - self.uav.g0 * np.cos(theta) * np.sin(phi)
                                 + np.random.normal(0, self._sp.accel_sigma))
 
         self.sensors.accel_z = (self.forces.item(2) / self.uav.mass
-                                + self.uav.g0 * np.cos(theta) * np.cos(phi)
+                                - self.uav.g0 * np.cos(theta) * np.cos(phi)
                                 + np.random.normal(0, self._sp.accel_sigma))
 
         # simulate magnetometers

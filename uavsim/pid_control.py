@@ -71,7 +71,7 @@ class PIControl(BasePID):
 
         error = y_ref - y
 
-        self.integrator += (self.ts / 2) * (error - self.e_delay)
+        self.integrator += (self.ts / 2) * (error + self.e_delay)
 
         u = self.kp * error + self.ki * self.integrator
         u_sat = self._saturate(u)

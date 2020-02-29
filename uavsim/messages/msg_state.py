@@ -6,6 +6,10 @@ class MsgState:
         self.py = 0.0
         self.h = 0.0
 
+        self.u = 0.0
+        self.v = 0.0
+        self.w = 0.0
+
         self.phi = 0.0
         self.theta = 0.0
         self.psi = 0.0
@@ -24,3 +28,7 @@ class MsgState:
 
         self.wx = 0.0
         self.wy = 0.0
+
+        self.bx = 0.0
+        self.by = 0.0
+        self.bz = 0.0
