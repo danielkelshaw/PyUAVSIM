@@ -1,9 +1,7 @@
 import uavsim
 import numpy as np
 from uavsim.utility.trim import compute_trim
-from uavsim.utility.signals import Signal
 from uavsim.path_follower import PathFollower
-from uavsim.messages.msg_autopilot import MsgAutopilot
 from uavsim.messages.msg_path import MsgPath
 
 
@@ -26,6 +24,7 @@ observer = uavsim.Observer(uav, sim_timestep)
 path_follower = PathFollower()
 
 uav_viewer = uavsim.UAVViewer()
+path_viewer = uavsim.PathViewer()
 
 path = MsgPath()
 path.type = 'orbit'
@@ -58,7 +57,7 @@ while n < (n_steps + 1):
     wind = wind_sim.update()
     uav_dynamics.update(delta, wind)
 
-    uav_viewer.update(uav_dynamics.true_state)
+    path_viewer.update(uav_dynamics.true_state, path)
 
     if n % 100 == 0:
         print('t = {:.3f}\t'.format(sim_time)
