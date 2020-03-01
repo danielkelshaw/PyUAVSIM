@@ -1,8 +1,8 @@
 import uavsim
 import numpy as np
 from uavsim.utility.trim import compute_trim
-from uavsim.utility.signals import Signal
-from uavsim.messages.msg_autopilot import MsgAutopilot
+from uavsim.path_follower import PathFollower
+from uavsim.messages.msg_path import MsgPath
 
 
 sim_timestep = 0.01
@@ -21,14 +21,24 @@ control_params = uavsim.ControlParams(uav, uav_dynamics, trim_state,
 
 autopilot = uavsim.Autopilot(control_params, sim_timestep)
 observer = uavsim.Observer(uav, sim_timestep)
+path_follower = PathFollower()
 
 uav_viewer = uavsim.UAVViewer()
+path_viewer = uavsim.PathViewer()
 
-commands = MsgAutopilot()
-va_command = Signal(offset=25.0, amplitude=3.0, start_time=2.0, frequency=0.01)
-h_command = Signal(offset=100.0, amplitude=10.0, start_time=0.0, frequency=0.05)
-chi_command = Signal(offset=np.radians(180), amplitude=np.radians(45),
-                     start_time=5.0, frequency=0.02)
+path = MsgPath()
+path.type = 'orbit'
+
+path.type = 'orbit'
+if path.type == 'line':
+    path.line_origin = np.array([[0.0, 0.0, -100.0]]).T
+    path.line_direction = np.array([[0.5, 1.0, 0.0]]).T
+    path.line_direction = path.line_direction \
+                          / np.linalg.norm(path.line_direction)
+elif path.type == 'orbit':
+    path.orbit_centre = np.array([[0.0, 0.0, 100.0]]).T
+    path.orbit_radius = 300.0
+    path.orbit_direction = 'CW'
 
 sim_time = 0.0
 n_steps = int(30 / sim_timestep)
@@ -38,18 +48,16 @@ print('Starting Simulation...')
 n = 0
 while n < (n_steps + 1):
 
-    commands.airspeed_command = va_command.square(sim_time)
-    commands.course_command = chi_command.square(sim_time)
-    commands.altitude_command = h_command.square(sim_time)
-
     measurements = uav_dynamics.get_sensors()
     estimated_state = observer.update(measurements)
+
+    commands = path_follower.update(path, estimated_state)
     delta, commanded_state = autopilot.update(commands, estimated_state)
 
     wind = wind_sim.update()
     uav_dynamics.update(delta, wind)
 
-    uav_viewer.update(uav_dynamics.true_state)
+    path_viewer.update(uav_dynamics.true_state, path)
 
     if n % 100 == 0:
         print('t = {:.3f}\t'.format(sim_time)
