@@ -6,7 +6,8 @@ from .pid_control import *
 from .plotting import *
 from .autopilot import Autopilot
 from .observer import Observer
+from .path_follower import PathFollower
 
 __all__ = ['parameters', 'utility', 'uav_dynamics',
            'wind_simulation', 'plotting', 'pid_control',
-           'autopilot', 'observer']
+           'autopilot', 'observer', 'path_follower']
