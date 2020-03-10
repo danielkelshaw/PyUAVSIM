@@ -7,8 +7,10 @@ from uavsim.messages.msg_path import MsgPath
 
 sim_timestep = 0.01
 
-uav = uavsim.UAVParams('params.yaml')
-uav_dynamics = uavsim.UAVDynamics(uav, sim_timestep)
+uav_params = uavsim.UAVParams('params.yaml')
+sensor_params = uavsim.SensorParams('sensor_params.yaml')
+
+uav_dynamics = uavsim.UAVDynamics(uav_params, sensor_params, sim_timestep)
 wind_sim = uavsim.WindSimulator(sim_timestep)
 
 # TODO:>> Place trim calculations within UAV instantiation
@@ -16,11 +18,11 @@ trim_state, trim_delta = compute_trim(uav_dynamics, 25, 0)
 uav_dynamics.state = trim_state
 delta = trim_delta
 
-control_params = uavsim.ControlParams(uav, uav_dynamics, trim_state,
+control_params = uavsim.ControlParams(uav_params, uav_dynamics, trim_state,
                                       trim_delta, sim_timestep)
 
 autopilot = uavsim.Autopilot(control_params, sim_timestep)
-observer = uavsim.Observer(uav, sim_timestep)
+observer = uavsim.Observer(uav_params, sensor_params, sim_timestep)
 path_follower = PathFollower()
 
 uav_viewer = uavsim.UAVViewer()

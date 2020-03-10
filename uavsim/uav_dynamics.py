@@ -1,14 +1,13 @@
 import numpy as np
 from .messages import MsgState, MsgSensors
 from .parameters.uav_parameters import UAVParams
-from .parameters.sensor_parameters import SensorParams
 from .utility.rotations import Quaternion2Rotation, Quaternion2Euler
 from .utility.rotations import Euler2Rotation
 
 
 class UAVDynamics:
 
-    def __init__(self, uav_params, ts):
+    def __init__(self, uav_params, sensor_params, ts):
 
         assert isinstance(uav_params, UAVParams)
 
@@ -42,7 +41,7 @@ class UAVDynamics:
 
         self.true_state = MsgState()
 
-        self._sp = SensorParams()
+        self._sp = sensor_params
         self.sensors = MsgSensors()
         self.t_gps = 1e6
         self.gps_eta_x = 0.0
