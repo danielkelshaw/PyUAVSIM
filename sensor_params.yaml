@@ -1,0 +1,24 @@
+accelerometer:
+  accel_sigma: 0.0025
+
+gyroscope:
+  gyro_bias_x: 0.0
+  gyro_bias_y: 0.0
+  gyro_bias_z: 0.0
+  gyro_sigma: 0.1
+
+magnetometer:
+  mag_beta: 1.0
+  mag_sigma: 0.03
+
+gps:
+  ts_gps: 1.0
+  gps_beta: 0.000909091
+  gps_sigma_x: 0.21
+  gps_sigma_y: 0.21
+  gps_sigma_z: 0.40
+  gps_sigma_v: 0.05
+
+pressure:
+  p_static_sigma: 10
+  p_diff_sigma: 2

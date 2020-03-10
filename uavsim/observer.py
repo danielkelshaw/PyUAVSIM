@@ -1,13 +1,12 @@
 import numpy as np
 from scipy import stats
 from .messages.msg_state import MsgState
-from .parameters.sensor_parameters import SensorParams
 from .utility.wrap import wrap
 
 
 class Observer:
 
-    def __init__(self, uav_params, ts_control):
+    def __init__(self, uav_params, sensor_params, ts_control):
 
         self.uav = uav_params
 
@@ -24,8 +23,8 @@ class Observer:
         self.lpf_p_static = AlphaFilter(alpha=0.9)
         self.lpf_p_diff = AlphaFilter(alpha=0.5)
 
-        self.attitude_ekf = EkfAttitude(uav_params, ts_control)
-        self.position_ekf = EkfPosition(uav_params, ts_control)
+        self.attitude_ekf = EkfAttitude(uav_params, sensor_params, ts_control)
+        self.position_ekf = EkfPosition(uav_params, sensor_params, ts_control)
 
     def update(self, measurement):
 
@@ -71,9 +70,9 @@ class AlphaFilter:
 
 class EkfAttitude:
 
-    def __init__(self, uav_params, ts_control):
+    def __init__(self, uav_params, sensor_params, ts_control):
 
-        self._sp = SensorParams()
+        self._sp = sensor_params
         self.uav = uav_params
         self.n_steps = 2
 
@@ -179,9 +178,9 @@ class EkfAttitude:
 
 class EkfPosition:
 
-    def __init__(self, uav_params, ts_control):
+    def __init__(self, uav_params, sensor_params, ts_control):
 
-        self._sp = SensorParams()
+        self._sp = sensor_params
         self.uav = uav_params
         self.n_steps = 10
         self.ts = ts_control / self.n_steps

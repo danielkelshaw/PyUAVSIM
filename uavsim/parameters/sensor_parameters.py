@@ -1,27 +1,36 @@
+import yaml
 import numpy as np
 
 
 class SensorParams:
 
-    def __init__(self):
+    def __init__(self, filename):
 
-        self.accel_sigma = 0.0025 * 9.81
+        self.filename = filename
+        self._load_file()
 
-        self.gyro_bias_x = 0.0
-        self.gyro_bias_y = 0.0
-        self.gyro_bias_z = 0.0
-        self.gyro_sigma = np.radians(0.1)
+    def _load_file(self):
 
-        self.p_static_sigma = 10
-        self.p_diff_sigma = 2
+        with open(self.filename) as file:
+            params = yaml.load(file, Loader=yaml.FullLoader)
 
-        self.mag_beta = np.radians(1.0)
-        self.mag_sigma = np.radians(0.03)
+        self.accel_sigma = params['accelerometer']['accel_sigma'] * 9.81
 
-        self.ts_gps = 1.0
-        self.gps_beta = 1 / 1100
-        self.gps_sigma_x = 0.21
-        self.gps_sigma_y = 0.21
-        self.gps_sigma_z = 0.40
-        self.gps_sigma_v = 0.05
+        self.gyro_bias_x = params['gyroscope']['gyro_bias_x']
+        self.gyro_bias_y = params['gyroscope']['gyro_bias_y']
+        self.gyro_bias_z = params['gyroscope']['gyro_bias_z']
+        self.gyro_sigma = np.radians(params['gyroscope']['gyro_sigma'])
+
+        self.mag_beta = np.radians(params['magnetometer']['mag_beta'])
+        self.mag_sigma = np.radians(params['magnetometer']['mag_sigma'])
+
+        self.ts_gps = params['gps']['ts_gps']
+        self.gps_beta = params['gps']['gps_beta']
+        self.gps_sigma_x = params['gps']['gps_sigma_x']
+        self.gps_sigma_y = params['gps']['gps_sigma_y']
+        self.gps_sigma_z = params['gps']['gps_sigma_z']
+        self.gps_sigma_v = params['gps']['gps_sigma_v']
         self.gps_sigma_course = self.gps_sigma_v / 10
+
+        self.p_static_sigma = params['pressure']['p_static_sigma']
+        self.p_diff_sigma = params['pressure']['p_diff_sigma']
