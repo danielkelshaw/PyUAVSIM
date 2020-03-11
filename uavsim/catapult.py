@@ -13,15 +13,12 @@ class Catapult(UAVDynamics):
 
         rot = Quaternion2Rotation(self.state[6:10])
         g_vector = np.array([[0.0], [0.0], [self.uav.mass * self.uav.g0]])
-        f_gravity = np.matmul(rot, g_vector)
+        f_gravity = np.matmul(rot.T, g_vector)
 
         applied_vector = np.array([[self.uav.mass * self.mag_acc], [0.0], [0.0]])
         f_applied = np.matmul(rot, applied_vector)
 
-        print(f_applied)
-        print(f_gravity)
-
-        self.fm_final = f_applied - f_gravity
+        self.fm_final = f_applied + f_gravity
 
         self._update_true_state()
 

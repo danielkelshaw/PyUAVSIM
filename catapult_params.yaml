@@ -8,7 +8,7 @@ initial_conditions:
   w0: 0.0
 
   phi0: 0.0
-  theta0: 0.523560209
+  theta0: 0.17452007
   psi0: 0.0
 
   p0: 0.0
