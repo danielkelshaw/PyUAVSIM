@@ -2,7 +2,6 @@
 
 <img src="media/trimmed_state.gif" />
 
-
 ## **Features:**
 PyUAVSIM provides an extensible 6DOF flight dynamics simulator for fixed-wing aircraft.
 

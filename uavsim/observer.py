@@ -12,13 +12,13 @@ class Observer:
 
         self.estimated_state = MsgState()
 
-        self.lpf_gyro_x = AlphaFilter(alpha=0.5)
-        self.lpf_gyro_y = AlphaFilter(alpha=0.5)
-        self.lpf_gyro_z = AlphaFilter(alpha=0.5)
+        self.lpf_gyro_x = AlphaFilter(alpha=0.2)
+        self.lpf_gyro_y = AlphaFilter(alpha=0.2)
+        self.lpf_gyro_z = AlphaFilter(alpha=0.2)
 
-        self.lpf_accel_x = AlphaFilter(alpha=0.5)
-        self.lpf_accel_y = AlphaFilter(alpha=0.5)
-        self.lpf_accel_z = AlphaFilter(alpha=0.5)
+        self.lpf_accel_x = AlphaFilter(alpha=0.3)
+        self.lpf_accel_y = AlphaFilter(alpha=0.3)
+        self.lpf_accel_z = AlphaFilter(alpha=0.3)
 
         self.lpf_p_static = AlphaFilter(alpha=0.9)
         self.lpf_p_diff = AlphaFilter(alpha=0.5)

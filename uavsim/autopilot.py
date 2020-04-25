@@ -79,11 +79,4 @@ class Autopilot:
 
     @staticmethod
     def _saturate(input, low_limit, up_limit):
-        # TODO:>> Potentially replace with np.clip()
-        if input <= low_limit:
-            output = low_limit
-        elif input >= up_limit:
-            output = up_limit
-        else:
-            output = input
-        return output
+        return np.clip(input, low_limit, up_limit)
