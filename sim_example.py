@@ -13,7 +13,6 @@ sensor_params = uavsim.SensorParams('sensor_params.yaml')
 uav_dynamics = uavsim.UAVDynamics(uav_params, sensor_params, sim_timestep)
 wind_sim = uavsim.WindSimulator(sim_timestep)
 
-# TODO:>> Place trim calculations within UAV instantiation
 trim_state, trim_delta = compute_trim(uav_dynamics, 25, 0)
 uav_dynamics.state = trim_state
 delta = trim_delta
@@ -43,7 +42,7 @@ elif path.type == 'orbit':
     path.orbit_direction = 'CW'
 
 sim_time = 0.0
-n_steps = int(30 / sim_timestep)
+n_steps = int(60 / sim_timestep)
 
 print('Starting Simulation...')
 
@@ -62,11 +61,7 @@ while n < (n_steps + 1):
     path_viewer.update(uav_dynamics.true_state, path)
 
     if n % 100 == 0:
-        print('t = {:.3f}\t'.format(sim_time)
-              + '\t'.join(['{:.3f}'.format(i)
-                           for i in uav_dynamics.state.squeeze()]))
-
-        print(np.rad2deg(uav_dynamics.true_state.chi), np.rad2deg(estimated_state.chi))
+        print(f't = {sim_time:.3f}')
 
     sim_time += sim_timestep
     n += 1
